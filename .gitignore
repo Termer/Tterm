@@ -1,4 +1,14 @@
 #################
+## Latex
+#################
+survey/*.aux
+survey/*.bbl
+survey/*.blg
+survey/*.log
+survey/*.pdf
+
+
+#################
 ## Eclipse
 #################
 
