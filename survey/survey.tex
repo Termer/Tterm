@@ -1,0 +1,156 @@
+\documentclass[a4paper,12pt,openany]{article}
+\usepackage{CJK}
+\usepackage{amsmath,amssymb}
+\usepackage{fancyhdr}
+\usepackage{amsthm}
+\usepackage{txfonts}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{color}
+\usepackage{caption} %在article模板中，图片是按照1,2,3,4的顺序进行编号的
+\captionsetup{figurewithin=section} %设置图片按照章节编号
+\captionsetup{tablewithin=section}
+\usepackage{cite}
+\usepackage{indentfirst} %设置首行缩进的包
+\setlength{\parindent}{2em} %设置首行缩进的距离 \indent表示首行缩进  \nonindent表示不缩进
+\setcounter{tocdepth}{4} %设置显示目录的深度，默认为3
+\linespread{1.3} %设置行距
+
+\begin{document}
+\begin{CJK*}{GBK}{song}
+
+\newtheorem{theorem}{定理}
+\newtheorem{definition}{定义}
+
+\title{函数式程序的终止性验证}
+\date{2013.5}
+\maketitle
+
+\section{背景}
+在信息技术被广泛应用的今天，信息系统的正确性成为了非常关键的问题。
+小到游戏中的BUG，大到飞行器控制系统中的错误，软件错误可能影响用户体验，也可能带来致命的损失。
+为了保证信息系统的正确性，对其进行严格的建模和验证，提出了各种软件形式化验证方法，涌现出了各种验证工具。
+现有的形式化方法可以用来保证程序的安全、活性等性质。
+
+终止性是非常重要的一种性质，是验证很多性质的基础。
+比如在多个进程访问共享资源时，会利用到进程锁机制，而活性性质则会要求每个进程在获得进程锁后一定会完成操作并释放进程锁，
+利用LTL的语法表示为AcquireLock F ReleaseLock，
+很多情况下这一性质的验证就等价于证明AcquireLock和ReleaseLock之间的代码执行是一定会终止的。
+
+本文重点介绍函数式程序终止性验证的相关技术。
+第2节介绍了图灵给出的终止性证明的理论基础和一般框架。
+第3节介绍了对终止性证明框架的一种理论改进。
+
+\section{终止性证明的理论基础}
+\subsection{问题的不可判定性}
+图灵早在1936年就提出了著名的停机问题，证明了一般性的程序终止问题不可判定。
+因此终止性验证方法的研究很少涉及完全性\footnote{即任意可以终止的程序都能被验证为终止}，
+一般的方法对程序进行分析后，或者给出结论可以终止，或者输出未知，判定程序不终止需要额外的努力。
+
+\subsection{终止性证明的框架}
+随后，图灵于1949年提出了证明程序正确性的一种方法\cite{Turing49}。
+
+他提出通过在语句之间插入断言来构造程序的正确性证明，而终止性证明的方法，则是构造一个表达式\footnote{即现在所称的ranking函数}，
+结合语句间已经被验证过的断言，证明表达式的值随着程序执行递减，而递减到下界即意味着程序的终止\footnote{图灵所构造的是一个值域为自然数的表达式，因此他还指出初始状态表达式的值为程序的执行时间给出了一个上界}。
+
+由此可见，证明程序的终止性关键之一在于构造ranking函数，把程序的状态映射到一个良基序，并证明程序的执行对应于ranking函数值的递减。
+因为良基序中不可能存在无穷递减序列，因此程序的状态执行序列一定是有限的，因此程序终止。
+良基序有很多可能的构造方法，图灵在\cite{Turing49}中本质上是构造了一个自然数的三元序偶\footnote{三个元素都是自然数，序偶间的大小关系同字典序}，
+因为每个元素的值存在上限，所以被组合为了一个自然数。
+
+关键之二在于验证随着程序的执行，ranking函数值是递减的，而很多情况下这样的验证需要借助程序的语义信息才能进行。
+在图灵给出的例子中，就是借助语句间插入的断言，它们表示了在当前状态各个变量满足的约束条件，以此为前提才能得出ranking函数值递减的结论。
+
+\section{终止性证明理论的改进}
+将程序表示为元组$(S,I,R)$，其中$S$表示所有可能的状态，$I$表示初始状态的集合，$R\subseteq S\times S$表示状态转移关系。
+终止性证明的经典理论认为应该通过ranking函数的构造，证明R是S上的良基关系。
+即构造良基序$(T,>)$，并构造ranking函数$f:S\rightarrow T$，若$R\subseteq\{(s,t)|f(s)>f(t)\}$，则R是S上的良基关系。
+
+在实际应用中，经典理论的一个难点在于可能需要构造非常复杂的ranking函数，证明值域上的良基关系也可能需要额外的努力\cite{Cook08}。
+对该理论的改进是由Podelski和Rybalchenko提出的\cite{Podelski04}。
+
+\begin{theorem}
+\textbf{Podelski\&Rybalchenko定理}
+设有二元关系$R\subseteq S\times S$，令$Q_{1},Q_{2},...,Q_{n}$为有限多个S上的二元关系，且$\forall i$，$Q_{i}$是S上的良基关系，
+则称$T=Q_{1}\cup Q_{2}\cup ...\cup Q_{n}$为析取的良基关系。
+R是S上的良基关系，当且仅当存在析取的良基关系T，使得$R^{+}\subseteq T$。
+\end{theorem}
+
+该方法称为析取的良基关系，它寻找简单ranking函数的集合，通过一系列析取终止性证明的构造来得到最终的结果\cite{Cook11}。
+源自微软研究院的终止性自动验证工具Terminator即采用这一技术\cite{Cook06}，该项目的实践表明，
+析取的终止性证明确实起到了简化ranking函数的作用，但是由于需要验证传递闭包的包含关系，在实际应用中仍然具有挑战性\cite{Cook08}。
+
+\section{重写系统的终止性验证}
+重写系统包括项的集合$T(F)$和重写规则的集合$R$。
+$F$是函数符号的集合，其中的元素为构造子，若$f\in F$的阶\footnote{arity}为n，则意味着
+$t_{1},t_{2},...,t_{n}\in T(F)\rightarrow f(t_{1},t_{2},...,t_{n})\in T(F)$。构造子的阶数不一定是固定的。
+集合$R$中的元素为形如$l\rightarrow r$的替换规则，
+若$s$是$t\in T(F)$的子项，且和某条规则匹配（即$s=l\sigma$），则可将$s$替换为$r\sigma$。
+从项t开始的一系列替换被称为推导，即$t\Rightarrow t_{1}\Rightarrow t_{2}...$。
+若从任意项出发，都不存在无穷推导，则称重写系统$(T,R)$是终止的。
+
+重写系统可以被用于刻画函数式程序，针对该语言定义相应的语义规则，实现其执行过程\cite{Giesl06}。
+因此，重写系统的终止性证明对于函数式程序的终止性证明有着重要的意义。
+\subsection{经典的终止性理论在重写系统中的应用}
+终止性证明的经典理论可以应用于重写系统中，并得出以下结论\cite{Dershowitz87}。
+\begin{theorem}
+重写系统$(T,R)$是终止的，当且仅当
+存在$T$上的良基关系$>$\footnote{这里用$>$表示严格偏序，$\geq$表示非严格偏序}，使得
+\begin{center}
+$\forall t,u\in T,(t\Rightarrow u)\rightarrow t>u$
+\end{center}
+\end{theorem}
+
+结合项的构造方法，可以推出以下结论
+\begin{theorem}
+重写系统$(T,R)$是终止的，当且仅当存在$T$上的\textbf{单调的}
+\footnote{单调性意味着$(t>u)\rightarrow f(...t...)>f(...u...)$，从而对子项的化简同时会化简包含它的父项}
+良基关系$>$，使得
+$R$中的任意一条规则$l\rightarrow r$和任意可能的变量替换$\sigma$满足$l\sigma > r\sigma$
+\end{theorem}
+
+定理3要求良基关系是单调的，因为$l\sigma > r\sigma$带来的只是局部的化简，具有了单调性才可以保证局部化简导致全局的化简，
+即$f(...l\sigma...)>f(...r\sigma...)$，从而得出结论任意的推导$t\Rightarrow u$都会导致化简$t>u$。
+
+参考图灵的开创性工作\cite{Turing49}，对定理3进一步推广就得出了利用ranking函数证明重写系统终止性的方法。
+但针对重写系统，ranking函数需要满足如下性质\cite{Dershowitz87}
+
+\begin{definition}
+$\tau$是将重写系统的项集$T(F)$映射到良基序$(W,>)$的ranking函数，若
+\item $\forall f\in F,\exists f_{\tau}:W^{n}\rightarrow W$，使得
+$\tau(f(t_{1},...,t_{n}))=f_{\tau}(\tau(t_{1},...,\tau(t_{n})))$，且$f_{\tau}$是单调的。
+\end{definition}
+
+从而，若对于任意的规则和变量替换都有$\tau(l\sigma)>\tau(r\sigma)$，则重写系统是终止的。
+\subsection{多项式解释}
+单调的多项式解释\footnote{polynomial interpretations}技术是由Lankford最早提出的。
+参考定义1，每个函数符号$f$都对应于整数多项式$f_{\tau}$，且系数为正数，以保持单调性。
+Knuth和Bendix于1970年提出了线性解释的方法，Manna和Ness提出了线性和二次方法，并给出了通过求解不等式计算系数的方法。
+随后又提出了指数形式的解释，并有一系列自动证明的方法\cite{Dershowitz87}。
+
+图灵在\cite{Turing49}中曾指出，ranking函数值域为整数时，函数值递减的过程意味着程序执行的复杂度。
+从而，整数多项式解释并不能对所有的重写系统进行证明，否则就意味着重写系统的计算复杂度都是多项式级别的\cite{Dershowitz87}。
+基于同样的分析，不同形式的解释会有不同的限制。
+\subsection{Simplification Ordering}
+Simplification Ordering常用于项重写系统\footnote{Term-Rewriting System}的终止性证明。
+该技术的出发点非常直观，如果重写系统的每一条规则都具有语法结构上的化简意义，那么系统一定是终止的\cite{Dershowitz82}。
+项重写系统的重写规则可以对应于语法树上子树的替换，如表达式$f(t_{1},t_{2})$意味着构造一棵语法树，
+其根节点对应的符号为$f\in F$，两个子节点对应的子树分别为$t_{1}$和$t_{2}$。
+
+Simplification Ordering即是在此记号的基础上提出的一种构造良基序的方法。
+该理论指出，给定符号集$F$上的一个良基序$\sqsubseteq$\footnote{规则集R是有限的，因此所涉及到的符号集合有限}，可以由此构造出$T(F)$上的良基序。
+
+Simplification Ordering的理论基础为Kruskal的树定理\cite{Gallier91}。
+它定义了一种比良基更强的关系：well quasi-order（此后简记为wqo），并给出了方法验证一个关系是否是wqo。
+
+\begin{theorem}
+\textbf{Kruskal树定理}
+\color{red}{此处补充完整}
+\end{theorem}
+
+\renewcommand\refname{参考文献}
+\bibliographystyle{plain}
+\bibliography{survey}
+\clearpage
+\end{CJK*}
+\end{document} 
