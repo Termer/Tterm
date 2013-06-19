@@ -150,10 +150,15 @@ Simplification Ordering的理论基础为Kruskal的树定理\cite{Gallier91}。
 
 \section{函数式程序的终止性验证}
 \subsection{size-change技术}
-2001年提出的size-change技术\cite{POPL'01-size-change}提供了一套针对函数式程序终止性的验证框架。
+size-change技术\cite{POPL'01-size-change}提供了一套针对函数式程序终止性的验证框架。
 对于一阶的函数式程序，生成其函数调用图，并标出随着函数调用，参数在良基序（比如自然数、list）上的下降关系，
 若能验证函数的无穷调用序列会导致参数的无穷下降，则终止性得证。
-进一步的，Lee在\cite{Lee09}中讨论了size-change终止性验证所对应的整个程序的ranking函数的形式，并给出了相应的构造方法。
+
+该技术利用的局部的参数关系，并不需要生成全局的ranking函数。
+\cite{Lee09}讨论了size-change终止性验证所对应的整个程序的ranking函数的形式，并给出了相应的构造方法。
+该方法构造出的ranking函数语法上很简单，但复杂度很高（很多简单表达式的组合）。
+为了解决该问题，\cite{SAT-based-ranking-CST}定义了size-change问题的一个子集，并给出了基于SAT的在多项式时间内
+求解其ranking函数的算法，ranking函数的形式也更加简化。
 \subsection{term-rewriting技术}
 
 \renewcommand\refname{参考文献}
